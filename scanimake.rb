@@ -7,21 +7,21 @@ class Scanimake
     @stripe_width = stripe_width
   end
 
-  def create_layered_image
+  def create_layered_image(direction=:vertical)
     layered_image = ImageList.new
     @images.each_with_index do |image, n|
-      mask = create_mask(n)
+      mask = create_mask(n, direction)
       layered_image << mask.composite(image, 0, 0, SrcInCompositeOp)
     end
     layered_image.flatten_images
   end
 
-  def create_mask_image(width_marge=100, height_marge=10, canvas_color="black")
-    create_mask(0, width_marge, height_marge, "white", canvas_color)
+  def create_mask_image(direction=:vertical, width_marge=100, height_marge=10, canvas_color="black")
+    create_mask(0, direction, width_marge, height_marge, "white", canvas_color)
   end
 
   private
-  def create_mask(n, width_marge=nil, height_marge=nil, pen_color="black", canvas_color="white")
+  def create_mask(n, direction, width_marge=nil, height_marge=nil, pen_color="black", canvas_color="white")
     #provide a canvas
     width = width_marge ? @images.columns + width_marge : @images.columns
     height = height_marge ? @images.rows + height_marge : @images.rows
@@ -33,11 +33,21 @@ class Scanimake
     pen.stroke_width = @stripe_width
     
     # provide stripes for mask
+    case direction
+    when :vertical
+      number_of_stripes = width/@stripe_width
+      line_proc = lambda { |x| pen.line(x, 0, x, height) }
+    when :horizontal
+      number_of_stripes = height/@stripe_width
+      line_proc = lambda { |x| pen.line(0, x, width, x) }
+    else
+      raise "Direction must :vertical or :horizontal"
+    end
     offset = n * @stripe_width
-    (width/@stripe_width).times do |i|
+    number_of_stripes.times do |i|
       next unless (i % @images.length).zero?
-      x = i * @stripe_width + offset + @stripe_width/2
-      pen.line(x, 0, x, height)
+      pos = i * @stripe_width + offset + @stripe_width/2
+      line_proc[pos]
     end
     
     #draw stripes on a canvas
