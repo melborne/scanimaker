@@ -60,10 +60,11 @@ class Scanimake
   end
 end
 
-sm = Scanimake.new(ARGV)
-path = File.expand_path(File.dirname(ARGV[0]))
-sm.create_layered_image.write("#{path}/out.png")
-sm.create_mask_image.write("#{path}/mask_out.png")
-
-exit
+if __FILE__ == $0
+  sm = Scanimake.new(ARGV)
+  path = File.expand_path(File.dirname(ARGV[0]))
+  sm.create_layered_image(:horizontal).write("#{path}/ball.png")
+  sm.create_mask_image(:horizontal).write("#{path}/mask_ball.png")
+  exit
+end
 
